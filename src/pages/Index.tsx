@@ -1,12 +1,164 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { Mail } from "lucide-react";
+import { EmailTypeSelector } from "@/components/EmailTypeSelector";
+import { EmailInputForm } from "@/components/EmailInputForm";
+import { EmailOutput } from "@/components/EmailOutput";
+import { EmailTemplates } from "@/components/EmailTemplates";
+import { toast } from "sonner";
+import heroImage from "@/assets/hero-email.jpg";
 
 const Index = () => {
+  const [selectedType, setSelectedType] = useState("new");
+  const [formData, setFormData] = useState({
+    recipient: "",
+    subject: "",
+    context: "",
+    tone: "formal",
+    existingEmail: "",
+  });
+  const [generatedEmail, setGeneratedEmail] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerate = async () => {
+    // Validate inputs
+    if (selectedType === "new" && (!formData.subject || !formData.context)) {
+      toast.error("Please fill in the subject and context fields");
+      return;
+    }
+
+    if ((selectedType === "reply" || selectedType === "summarize" || selectedType === "reformat") && !formData.existingEmail) {
+      toast.error("Please paste the email content");
+      return;
+    }
+
+    setIsGenerating(true);
+    
+    try {
+      // TODO: Implement AI generation with Lovable Cloud
+      // For now, showing a placeholder
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      let mockEmail = "";
+      
+      if (selectedType === "new") {
+        mockEmail = `Dear ${formData.recipient || "[Recipient]"},
+
+I hope this email finds you well.
+
+${formData.context}
+
+Best regards,
+[Your Name]`;
+      } else if (selectedType === "reply") {
+        mockEmail = `Thank you for your email.
+
+I appreciate you reaching out. ${formData.existingEmail ? "Regarding your message, " : ""}I wanted to respond promptly.
+
+Best regards,
+[Your Name]`;
+      } else if (selectedType === "summarize") {
+        mockEmail = `Summary of the email:
+
+• Key Point 1
+• Key Point 2
+• Key Point 3
+
+Action items needed.`;
+      } else {
+        mockEmail = formData.existingEmail ? `Reformatted in ${formData.tone} tone:\n\n${formData.existingEmail}` : "Please provide email content to reformat.";
+      }
+
+      setGeneratedEmail(mockEmail);
+      toast.success("Email generated successfully!");
+    } catch (error) {
+      toast.error("Failed to generate email. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleTemplateSelect = (template: any) => {
+    setSelectedType("new");
+    setFormData({
+      ...formData,
+      subject: template.subject,
+      context: template.context,
+      tone: template.tone,
+    });
+    toast.success(`Template "${template.title}" loaded!`);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-background to-accent/20">
+      {/* Hero Section */}
+      <header className="relative overflow-hidden">
+        <div 
+          className="absolute inset-0 opacity-30 bg-cover bg-center"
+          style={{ backgroundImage: `url(${heroImage})` }}
+        />
+        <div className="relative container mx-auto px-4 py-16 text-center">
+          <div className="flex items-center justify-center mb-4">
+            <div className="p-3 rounded-full bg-primary/10">
+              <Mail className="h-12 w-12 text-primary" />
+            </div>
+          </div>
+          <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+            MailGenie ✉️
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Your AI-Powered Email Writing Assistant
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Create professional emails in seconds with intelligent AI assistance
+          </p>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 pb-16 space-y-8">
+        {/* Email Type Selector */}
+        <section>
+          <h2 className="text-2xl font-semibold mb-6">What would you like to do?</h2>
+          <EmailTypeSelector selectedType={selectedType} onSelectType={setSelectedType} />
+        </section>
+
+        {/* Templates */}
+        <section>
+          <EmailTemplates onSelectTemplate={handleTemplateSelect} />
+        </section>
+
+        {/* Input Form and Output */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <section>
+            <h2 className="text-2xl font-semibold mb-6">Email Details</h2>
+            <EmailInputForm
+              emailType={selectedType}
+              formData={formData}
+              onFormDataChange={setFormData}
+              onGenerate={handleGenerate}
+              isGenerating={isGenerating}
+            />
+          </section>
+
+          {generatedEmail && (
+            <section>
+              <h2 className="text-2xl font-semibold mb-6">Your Email</h2>
+              <EmailOutput
+                generatedEmail={generatedEmail}
+                onRegenerate={handleGenerate}
+                isRegenerating={isGenerating}
+              />
+            </section>
+          )}
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border bg-card/50 backdrop-blur-sm py-8 mt-16">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          <p>MailGenie - Making email writing effortless with AI</p>
+        </div>
+      </footer>
     </div>
   );
 };
