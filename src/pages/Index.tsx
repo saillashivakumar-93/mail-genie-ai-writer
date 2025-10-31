@@ -5,6 +5,7 @@ import { EmailInputForm } from "@/components/EmailInputForm";
 import { EmailOutput } from "@/components/EmailOutput";
 import { EmailTemplates } from "@/components/EmailTemplates";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import heroImage from "@/assets/hero-email.jpg";
 
 const Index = () => {
@@ -34,44 +35,24 @@ const Index = () => {
     setIsGenerating(true);
     
     try {
-      // TODO: Implement AI generation with Lovable Cloud
-      // For now, showing a placeholder
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      let mockEmail = "";
-      
-      if (selectedType === "new") {
-        mockEmail = `Dear ${formData.recipient || "[Recipient]"},
+      const { data, error } = await supabase.functions.invoke('generate-email', {
+        body: { emailType: selectedType, formData }
+      });
 
-I hope this email finds you well.
-
-${formData.context}
-
-Best regards,
-[Your Name]`;
-      } else if (selectedType === "reply") {
-        mockEmail = `Thank you for your email.
-
-I appreciate you reaching out. ${formData.existingEmail ? "Regarding your message, " : ""}I wanted to respond promptly.
-
-Best regards,
-[Your Name]`;
-      } else if (selectedType === "summarize") {
-        mockEmail = `Summary of the email:
-
-• Key Point 1
-• Key Point 2
-• Key Point 3
-
-Action items needed.`;
-      } else {
-        mockEmail = formData.existingEmail ? `Reformatted in ${formData.tone} tone:\n\n${formData.existingEmail}` : "Please provide email content to reformat.";
+      if (error) {
+        console.error("Error generating email:", error);
+        throw new Error(error.message || "Failed to generate email");
       }
 
-      setGeneratedEmail(mockEmail);
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      setGeneratedEmail(data.generatedEmail);
       toast.success("Email generated successfully!");
     } catch (error) {
-      toast.error("Failed to generate email. Please try again.");
+      console.error("Generation error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to generate email. Please try again.");
     } finally {
       setIsGenerating(false);
     }
